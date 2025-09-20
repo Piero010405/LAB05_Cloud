@@ -1,0 +1,23 @@
+# Archivos de sistema y de editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Dependencias y archivos generados por el proyecto
+node_modules/
+build/
+dist/
+temp/
+logs/
+
+# Archivos de configuración local
+*.env
+.env.local
+config.local.js
+
+# Archivos de registro
+*.log
+
+# Archivos de caché y temporales
+.cache/
+tmp/
