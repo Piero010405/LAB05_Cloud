@@ -2,6 +2,8 @@ import streamlit as st
 import joblib
 import pickle
 import numpy as np
+import psycopg2
+import pandas as pd
 
 import psycopg2
 # Fetch variables
