@@ -16,33 +16,26 @@ DBNAME = "postgres" #os.getenv("dbname")
 
 # Configuración de la página
 st.set_page_config(page_title="Predictor de Iris", page_icon="🌸")
-# Connect to the database
-try:
-    connection = psycopg2.connect(
-        user=USER,
-        password=PASSWORD,
-        host=HOST,
-        port=PORT,
-        dbname=DBNAME
-    )
-    print("Connection successful!")
-    
-    # Create a cursor to execute SQL queries
-    cursor = connection.cursor()
-    
-    # Example query
-    cursor.execute("SELECT NOW();")
-    result = cursor.fetchone()
-    print("Current Time:", result)
-    # Close the cursor and connection
-    cursor.close()
-    connection.close()
-    print("Connection closed.")
 
-except Exception as e:
-    st.write(str(e))
-
-
+# Función para obtener una conexión a la base de datos
+@st.cache_resource
+def get_connection():
+    """
+    Establece y retorna una conexión a la base de datos de Supabase.
+    Usa st.cache_resource para reutilizar la conexión entre re-ejecuciones de la app.
+    """
+    try:
+        connection = psycopg2.connect(
+            user=USER,
+            password=PASSWORD,
+            host=HOST,
+            port=PORT,
+            dbname=DBNAME
+        )
+        return connection
+    except Exception as e:
+        st.error(f"Error al conectar con la base de datos: {e}")
+        return None
 
 # Función para cargar los modelos
 @st.cache_resource
@@ -62,6 +55,21 @@ st.title("🌸 Predictor de Especies de Iris")
 
 # Cargar modelos
 model, scaler, model_info = load_models()
+
+# Obtener la conexión a la base de datos
+conn = get_connection()
+
+if conn is not None:
+    try:
+        # Prueba de conexión inicial y muestra la hora actual
+        cursor = conn.cursor()
+        cursor.execute("SELECT NOW();")
+        db_time = cursor.fetchone()[0]
+        st.success(f"Conexión a la base de datos exitosa. Hora del servidor: {db_time}")
+        cursor.close()
+    except Exception as e:
+        st.error(f"Error en la consulta de prueba: {e}")
+        conn = None
 
 if model is not None:
     # Inputs
@@ -96,3 +104,49 @@ if model is not None:
         st.write("Probabilidades:")
         for species, prob in zip(target_names, probabilities):
             st.write(f"- {species}: {prob:.1%}")
+        
+        # --- Parte nueva para guardar la predicción ---
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                # SQL INSERT con los nombres de columna de tu tabla
+                insert_query = """
+                INSERT INTO table_iris (ls, "as", lp, ap, prediction) 
+                VALUES (%s, %s, %s, %s, %s);
+                """
+                # Los valores deben coincidir con el orden de las columnas en la query
+                values_to_insert = (sepal_length, sepal_width, petal_length, petal_width, predicted_species)
+                cursor.execute(insert_query, values_to_insert)
+                conn.commit()
+                st.info("Predicción guardada en la base de datos.")
+            except Exception as e:
+                st.error(f"Error al guardar la predicción: {e}")
+            finally:
+                cursor.close()
+        # --- Fin de la parte nueva ---
+
+    # --- Mostrar el historial de predicciones ---
+    st.markdown("---")
+    st.header("Historial de Predicciones")
+    
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+            # SQL SELECT para obtener todos los datos, ordenados por los más recientes
+            cursor.execute("SELECT created_at, ls, \"as\", lp, ap, prediction FROM table_iris ORDER BY created_at DESC;")
+            records = cursor.fetchall()
+            
+            if records:
+                # Nombres de las columnas para el DataFrame
+                column_names = ["Fecha y Hora", "Longitud Sépalo", "Ancho Sépalo", "Longitud Pétalo", "Ancho Pétalo", "Predicción"]
+                # Convertir los resultados a un DataFrame de pandas
+                df = pd.DataFrame(records, columns=column_names)
+                # Mostrar el DataFrame en Streamlit
+                st.dataframe(df)
+            else:
+                st.info("Aún no hay predicciones en la base de datos.")
+        except Exception as e:
+            st.error(f"Error al cargar el historial de predicciones: {e}")
+        finally:
+            cursor.close()
+    # --- Fin ---
