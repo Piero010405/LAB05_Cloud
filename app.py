@@ -47,7 +47,7 @@ def load_models():
             model_info = pickle.load(f)
         return model, scaler, model_info
     except FileNotFoundError:
-        st.error("No se encontraron los archivos del modelo en la carpeta 'models/'")
+        st.error("No se encontraron los archivos del modelo.")
         return None, None, None
 
 # Título
@@ -74,7 +74,6 @@ if conn is not None:
 if model is not None:
     # Inputs
     st.header("Ingresa las características de la flor:")
-    st.write(result)
     
     sepal_length = st.number_input("Longitud del Sépalo (cm)", min_value=0.0, max_value=10.0, value=5.0, step=0.1)
     sepal_width = st.number_input("Ancho del Sépalo (cm)", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
@@ -104,7 +103,7 @@ if model is not None:
         st.write("Probabilidades:")
         for species, prob in zip(target_names, probabilities):
             st.write(f"- {species}: {prob:.1%}")
-        
+
         # --- Parte nueva para guardar la predicción ---
         if conn is not None:
             try:
@@ -125,7 +124,7 @@ if model is not None:
                 cursor.close()
         # --- Fin de la parte nueva ---
 
-    # --- Mostrar el historial de predicciones ---
+    # --- Parte nueva para mostrar el historial de predicciones ---
     st.markdown("---")
     st.header("Historial de Predicciones")
     
@@ -149,4 +148,4 @@ if model is not None:
             st.error(f"Error al cargar el historial de predicciones: {e}")
         finally:
             cursor.close()
-    # --- Fin ---
+    # --- Fin de la parte nueva ---
