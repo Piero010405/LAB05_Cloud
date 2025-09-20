@@ -9,7 +9,7 @@ import psycopg2
 # postgresql://postgres.vjazwlsapjqtgddzpzya:[YOUR-PASSWORD]@aws-1-us-east-2.pooler.supabase.com:6543/postgres
 
 USER = "postgres.vjazwlsapjqtgddzpzya" #os.getenv("user")
-PASSWORD = "pipo010405"# os.getenv("password")
+PASSWORD = "USIL$2025#$%" # os.getenv("password")
 HOST = "@aws-1-us-east-2.pooler.supabase.com" #os.getenv("host")
 PORT = "6543" #os.getenv("port")
 DBNAME = "postgres" #os.getenv("dbname")
